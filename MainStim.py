@@ -14,62 +14,6 @@ for w in a:
         bd_addr = w.device
     elif w.description == 'USB <-> Stimu_Control':
         stimulatorPort = w.device
-'''        
-print('porta controle:', bd_addr)
-print('porta stimulador:', stimulatorPort)
-
-ser = serial.Serial()
-ser.port = bd_addr
-ser.timeout = 1
-ser.bourate = 115200
-ser.xonxoff = 1
-
-print('esperando 5 seg antes de abrir')
-time.sleep(5);
-
-try:
-    ser.open()
-    print('depois 5 seg antes de abrir')
-    time.sleep(5);
-    
-    print('Porta aberta')
-except Exeption as erro:
-    print('Error em: ' + str(erro))
-    
-print('Continuando porta aberta')
-
-start_receiver = True
-msg = '123'
-
-
-if ser.isOpen():
-    try:
-        print(msg)
-        msg_bytes = str.encode(msg)
-        print('esperando 5 seg')
-        time.sleep(5);
-        print('terminou esperando 5 seg')
-        ser.write(msg_bytes)
-        
-            
-        while start_receiver is True:
-            c = ser.readline()
-            if len(c) > 0:
-                str_msn = c.decode()
-                str_msn = str_msn.rstrip()
-                print(str_msn)
-                if str_msn == 'conectou':
-                    print("Puede mandar un nuevo comando")
-                    start_receiver = False
-
-    except Exception as e1:
-        print('Error communicating...: ' + str(e1))
-        
-else:
-    print("Cannot open serial port " + str(port) + "En -- puerta no abierta --")
-    exit()
-    
-'''
    
 sock = serial.Serial(bd_addr, baudrate=9600, timeout=0.1)
 time.sleep(15)
@@ -105,7 +49,6 @@ serialStimulator = serial.Serial(stimulatorPort, baudrate=115200, timeout=0.1)
 stim = stimulator.Stimulator(serialStimulator) #chama a classe
 time.sleep(5)
 
-
 print('recebeu parametros:')
 print(parametros)
 
@@ -130,14 +73,24 @@ def stim_setup():
 # mode eh a quantidade de canais utilizados e channels e como a funcao stim.inicialization interpreta esse canais
 # logo, eh necessario codificar a quantidade de canais nessa forma binaria ,o mais a esquerda eh o 8 e o mais a direita eh o 1
 def channels(mode):
-    if mode == 2:
-        channels = 0b00000011
+    if mode == 0:
+        channels = 0b00000000  # Estado Inicial
+    elif mode == 1:
+        channels = 0b00000011  # Extensão
+    elif mode == 2:
+        channels = 0b00001100  # Flexão
+    elif mode == 3:
+        channels = 0b00001111  # Extensão + Flexão
     elif mode == 4:
-        channels = 0b00001111
+        channels = 0b00110011  # (Extensão & Aux_Ext)
+    elif mode == 5:
+        channels = 0b00111111  # (Extensão & Aux_Ext) + Flexão
     elif mode == 6:
-        channels = 0b00111111
+        channels = 0b11001100  # (Flexão & Aux_Flex)
+    elif mode == 7:
+        channels = 0b11001111  # Extensao + (Flexão & Aux_Flex)
     elif mode == 8:
-        channels = 0b11111111
+        channels = 0b11111111  # (Extensão & Aux_Ext) + (Flexão & Aux_Flex)
 
     return channels
 
@@ -145,10 +98,10 @@ def running(current_A,current_B,pw,mode,channels):
     
     #cria um vetor com as correntes para ser usado pela funcao update
     current_str = []
-    if mode == 2:
+    if mode == 1:
         current_str.append(current_A)
         current_str.append(current_A)
-    elif mode == 4: # Canais 1 e 2 terao corrente A e canais 3 e 4 corrent B
+    elif mode == 3: # Canais 1 e 2 terao corrente A e canais 3 e 4 corrent B
         current_str.append(current_A)
         current_str.append(current_A)
         current_str.append(current_B)
@@ -156,8 +109,7 @@ def running(current_A,current_B,pw,mode,channels):
         
     sock.write(b'a') # envia 'a' sinalizando a conexao para o controlador
     print("running")
-    
-    
+        
     state = 0
     print(state)
     while state != 3:
@@ -202,10 +154,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-    
-
-
-    
