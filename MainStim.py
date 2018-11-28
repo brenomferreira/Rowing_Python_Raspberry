@@ -14,6 +14,62 @@ for w in a:
         bd_addr = w.device
     elif w.description == 'USB <-> Stimu_Control':
         stimulatorPort = w.device
+'''        
+print('porta controle:', bd_addr)
+print('porta stimulador:', stimulatorPort)
+
+ser = serial.Serial()
+ser.port = bd_addr
+ser.timeout = 1
+ser.bourate = 115200
+ser.xonxoff = 1
+
+print('esperando 5 seg antes de abrir')
+time.sleep(5);
+
+try:
+    ser.open()
+    print('depois 5 seg antes de abrir')
+    time.sleep(5);
+    
+    print('Porta aberta')
+except Exeption as erro:
+    print('Error em: ' + str(erro))
+    
+print('Continuando porta aberta')
+
+start_receiver = True
+msg = '123'
+
+
+if ser.isOpen():
+    try:
+        print(msg)
+        msg_bytes = str.encode(msg)
+        print('esperando 5 seg')
+        time.sleep(5);
+        print('terminou esperando 5 seg')
+        ser.write(msg_bytes)
+        
+            
+        while start_receiver is True:
+            c = ser.readline()
+            if len(c) > 0:
+                str_msn = c.decode()
+                str_msn = str_msn.rstrip()
+                print(str_msn)
+                if str_msn == 'conectou':
+                    print("Puede mandar un nuevo comando")
+                    start_receiver = False
+
+    except Exception as e1:
+        print('Error communicating...: ' + str(e1))
+        
+else:
+    print("Cannot open serial port " + str(port) + "En -- puerta no abierta --")
+    exit()
+    
+'''
    
 sock = serial.Serial(bd_addr, baudrate=9600, timeout=0.1)
 time.sleep(15)
@@ -29,13 +85,14 @@ statWait = True
 sock.write(b'a') # envia 'a' sinalizando a conexao para o controlador
 #while statSend == True:
 time.sleep(1)
+'''
 temp= sock.readline()
 Temp = temp.decode()
 Temp = temp[0:8]
 if temp == 'conectou':
     statWait = False
     statSend = False     
-
+'''
 print("Conectado")
 
 statWait = True
@@ -48,6 +105,7 @@ while statWait == True:
 serialStimulator = serial.Serial(stimulatorPort, baudrate=115200, timeout=0.1)
 stim = stimulator.Stimulator(serialStimulator) #chama a classe
 time.sleep(5)
+
 
 print('recebeu parametros:')
 print(parametros)
@@ -72,27 +130,39 @@ def stim_setup():
 
 # mode eh a quantidade de canais utilizados e channels e como a funcao stim.inicialization interpreta esse canais
 # logo, eh necessario codificar a quantidade de canais nessa forma binaria ,o mais a esquerda eh o 8 e o mais a direita eh o 1
+'''
 def channels(mode):
-    if mode == 0:
-        channels = 0b00000000  # Estado Inicial
-    elif mode == 1:
-        channels = 0b00000011  # Extensão
-    elif mode == 2:
-        channels = 0b00001100  # Flexão
-    elif mode == 3:
-        channels = 0b00001111  # Extensão + Flexão
+    if mode == 1:
+        channels = 0b00000011 
     elif mode == 4:
-        channels = 0b00110011  # (Extensão & Aux_Ext)
-    elif mode == 5:
-        channels = 0b00111111  # (Extensão & Aux_Ext) + Flexão
+        channels = 0b00001111
     elif mode == 6:
-        channels = 0b11001100  # (Flexão & Aux_Flex)
-    elif mode == 7:
-        channels = 0b11001111  # Extensao + (Flexão & Aux_Flex)
+        channels = 0b00111111
     elif mode == 8:
-        channels = 0b11111111  # (Extensão & Aux_Ext) + (Flexão & Aux_Flex)
+        channels = 0b11111111
 
     return channels
+'''
+def channels(mode):
+    if mode == 1: #Extensão
+        channels = 0b00000011
+    elif mode == 2: #Flexão
+        channels = 0b00001100
+    elif mode == 3: #Extensão + Flexão
+        channels = 0b00001111
+    elif mode == 4: #(Extensão & Aux_Ext)
+        channels = 0b00110011
+    elif mode == 5: #(Extensão & Aux_Ext) + Flexão
+        channels = 0b00111111
+    elif mode == 6: #(Flexão & Aux_Flex)
+        channels = 0b11001100
+    elif mode == 7: #Extensao + (Flexão & Aux_Flex)
+        channels = 0b11001111
+    elif mode == 8: #(Extensão & Aux_Ext) + (Flexão & Aux_Flex)
+        channels = 0b11111111
+    
+    return channels
+
 
 def running(current_A,current_B,pw,mode,channels):
     
@@ -109,7 +179,8 @@ def running(current_A,current_B,pw,mode,channels):
         
     sock.write(b'a') # envia 'a' sinalizando a conexao para o controlador
     print("running")
-        
+    
+    
     state = 0
     print(state)
     while state != 3:
@@ -117,7 +188,7 @@ def running(current_A,current_B,pw,mode,channels):
             pass
         state = int(sock.read(1))#state = int(sock.read(1))
         print(state)
-        if mode == 2:                           # Para 2 canais
+        if mode == 1:                           # Para 2 canais
             if state == 0: 
                 print("Parado")
                 stim.update(channels,[0,0], current_str)
@@ -128,16 +199,16 @@ def running(current_A,current_B,pw,mode,channels):
             elif state == 2:
                 stim.update(channels, [0,0], current_str)    
                 print("Contracao")    
-        elif mode == 4:                         # Para 4 canais
+        elif mode == 3:                         # Para 4 canais
             if state == 0: 
                 print("Parado")
                 stim.update(channels,[0,0,0,0], current_str)
                # stim.stop()
             elif state == 1:
-                stim.update(channels,[0,0,pw,pw], current_str)    
+                stim.update(channels,[pw,pw,0,0], current_str)    
                 print("Extensao")       
             elif state == 2:
-                stim.update(channels,[pw,pw,0,0], current_str)    
+                stim.update(channels,[0,0,pw,pw], current_str)    
                 print("Contracao")    
             #para usar 6 ou 8 canais eh necessario copiar o codigo logo acima e mudar somente o vetor pw,
             #colocando-se pw no canal que se quer estimular
@@ -154,3 +225,10 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+    
+
+
+    
