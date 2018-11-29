@@ -130,11 +130,12 @@ def stim_setup():
 
 # mode eh a quantidade de canais utilizados e channels e como a funcao stim.inicialization interpreta esse canais
 # logo, eh necessario codificar a quantidade de canais nessa forma binaria ,o mais a esquerda eh o 8 e o mais a direita eh o 1
+
 def channels(mode):
     if mode == 1:
         channels = 0b00000011
     elif mode == 2:
-        channels = 0b00001111
+        channels = 0b00001100
     elif mode == 3:
         channels = 0b00001111
     elif mode == 6:
@@ -144,6 +145,8 @@ def channels(mode):
 
     return channels
 
+#channels = 0b11111111
+
 def running(current_A,current_B,pw,mode,channels):
     
     #cria um vetor com as correntes para ser usado pela funcao update
@@ -152,8 +155,8 @@ def running(current_A,current_B,pw,mode,channels):
         current_str.append(current_A)
         current_str.append(current_A)
     elif mode == 2:
-        current_str.append(current_A)
-        current_str.append(current_A)
+        #current_str.append(current_A)
+        #current_str.append(current_A)
         current_str.append(current_B)
         current_str.append(current_B)
     elif mode == 3: # Canais 1 e 2 terao corrente A e canais 3 e 4 corrent B
@@ -187,13 +190,13 @@ def running(current_A,current_B,pw,mode,channels):
         elif mode == 2:                         # Para 4 canais
             if state == 0: 
                 print("Parado")
-                stim.update(channels,[0,0,0,0], current_str)
+                stim.update(channels,[0,0], current_str)
                 # stim.stop()
             elif state == 1:
-                stim.update(channels,[0,0,0,0], current_str)    
+                stim.update(channels,[0,0], current_str)    
                 print("Extensao")       
             elif state == 2:
-                stim.update(channels,[0,0,pw,pw], current_str)    
+                stim.update(channels,[pw,pw], current_str)    
                 print("Contracao")
         elif mode == 3:                         # Para 4 canais
             if state == 0: 
