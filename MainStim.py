@@ -1,10 +1,12 @@
 import stimulator
 import serial
 import time
+#import bluetooth
 import serial.tools.list_ports
 import io
 
 a=serial.tools.list_ports.comports()
+#print(a)
 
 for w in a:
     print("\tPort:", w.device,"\tSerial#:", w.serial_number, "\tDesc:", w.description)
@@ -48,7 +50,8 @@ if ser.isOpen():
         time.sleep(5);
         print('terminou esperando 5 seg')
         ser.write(msg_bytes)
-
+        
+            
         while start_receiver is True:
             c = ser.readline()
             if len(c) > 0:
@@ -95,7 +98,7 @@ print("Conectado")
 statWait = True
 while statWait == True:
     parametros = sock.readline().decode()
-    parametros = parametros[0:20]
+    parametros = parametros[0:28]
     if parametros != '':
         statWait = False
         
@@ -112,28 +115,27 @@ flag = parametros
    
 def stim_setup():
     print(flag)
-    current_CH12 = int(flag[1:4])
-    current_CH34 = int(flag[5:8])
-    current_CH56 = int(flag[9:12])
-    current_CH78 = int(flag[13:16])
-    pw           = int(flag[17:20])
-    freq         = int(flag[21:24])
-    mode         = int(flag[25:28])
-    print(current_CH12,current_CH34,current_CH56,current_CH78,pw,mode,freq)
+    current_A = int(flag[1:4])
+    current_B = int(flag[5:8])
+    pw = int(flag[17:20])
+    freq = int(flag[21:24])
+    mode = int(flag[25:28])
+    print(current_A,current_B,pw,mode,freq)
     canais = channels(mode)
     
     # Os parametros sao frequencias e canais
     stim.initialization(freq,canais)
 
-    return [current_CH12,current_CH34,pw,mode,canais]
+    return [current_A,current_B,pw,mode,canais]
 
 # mode eh a quantidade de canais utilizados e channels e como a funcao stim.inicialization interpreta esse canais
 # logo, eh necessario codificar a quantidade de canais nessa forma binaria ,o mais a esquerda eh o 8 e o mais a direita eh o 1
-'''
 def channels(mode):
     if mode == 1:
-        channels = 0b00000011 
-    elif mode == 4:
+        channels = 0b00000011
+    elif mode == 2:
+        channels = 0b00001111
+    elif mode == 3:
         channels = 0b00001111
     elif mode == 6:
         channels = 0b00111111
@@ -141,45 +143,24 @@ def channels(mode):
         channels = 0b11111111
 
     return channels
-'''
-def channels(mode):
-    if mode == 1: #Extensão
-        channels = 0b00000011
-    elif mode == 2: #Flexão
-        channels = 0b00001100
-    elif mode == 3: #Extensão + Flexão
-        channels = 0b00001111
-    elif mode == 4: #(Extensão & Aux_Ext)
-        channels = 0b00110011
-    elif mode == 5: #(Extensão & Aux_Ext) + Flexão
-        channels = 0b00111111
-    elif mode == 6: #(Flexão & Aux_Flex)
-        channels = 0b11001100
-    elif mode == 7: #Extensao + (Flexão & Aux_Flex)
-        channels = 0b11001111
-    elif mode == 8: #(Extensão & Aux_Ext) + (Flexão & Aux_Flex)
-        channels = 0b11111111
-    
-    return channels
 
-
-def running(current_CH12,current_CH34,pw,mode,channels):
+def running(current_A,current_B,pw,mode,channels):
     
     #cria um vetor com as correntes para ser usado pela funcao update
     current_str = []
     if mode == 1:
-        current_str.append(current_CH12)
-        current_str.append(current_CH12)
+        current_str.append(current_A)
+        current_str.append(current_A)
     elif mode == 2:
-        current_str.append(0)
-        current_str.append(0)
-        current_str.append(current_CH34)
-        current_str.append(current_CH34)
+        current_str.append(current_A)
+        current_str.append(current_A)
+        current_str.append(current_B)
+        current_str.append(current_B)
     elif mode == 3: # Canais 1 e 2 terao corrente A e canais 3 e 4 corrent B
-        current_str.append(current_CH12)
-        current_str.append(current_CH12)
-        current_str.append(current_CH34)
-        current_str.append(current_CH34)
+        current_str.append(current_A)
+        current_str.append(current_A)
+        current_str.append(current_B)
+        current_str.append(current_B)
         
     sock.write(b'a') # envia 'a' sinalizando a conexao para o controlador
     print("running")
@@ -203,17 +184,17 @@ def running(current_CH12,current_CH34,pw,mode,channels):
             elif state == 2:
                 stim.update(channels, [0,0], current_str)    
                 print("Contracao")    
-        elif mode == 2:                         # Para flexao
+        elif mode == 2:                         # Para 4 canais
             if state == 0: 
                 print("Parado")
                 stim.update(channels,[0,0,0,0], current_str)
-               # stim.stop()
+                # stim.stop()
             elif state == 1:
                 stim.update(channels,[0,0,0,0], current_str)    
                 print("Extensao")       
             elif state == 2:
-                stim.update(channels,[pw,pw,0,0], current_str)    
-                print("Contracao")    
+                stim.update(channels,[0,0,pw,pw], current_str)    
+                print("Contracao")
         elif mode == 3:                         # Para 4 canais
             if state == 0: 
                 print("Parado")
@@ -229,9 +210,9 @@ def running(current_CH12,current_CH34,pw,mode,channels):
             #colocando-se pw no canal que se quer estimular
     
 def main():
-    [current_CH12,current_CH34,pw,mode,channels] = stim_setup()
-    print(current_CH12,current_CH34,pw,mode,channels)
-    running(current_CH12,current_CH34,pw,mode,channels)
+    [current_A,current_B,pw,mode,channels] = stim_setup()
+    print(current_A,current_B,pw,mode,channels)
+    running(current_A,current_B,pw,mode,channels)
 
     stim.stop()
     sock.close()
