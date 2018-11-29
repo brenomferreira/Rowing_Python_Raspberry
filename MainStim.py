@@ -97,7 +97,7 @@ def channels(mode):
 
 #channels = 0b11111111
 
-def running(current_CH12,current_CH34,pw,mode,channels):
+def running(current_CH12,current_CH34,current_CH56,current_CH78,pw,mode,channels):
     
     #cria um vetor com as correntes para ser usado pela funcao update
     current_str = []
@@ -137,7 +137,7 @@ def running(current_CH12,current_CH34,pw,mode,channels):
             pass
         state = int(sock.read(1))#state = int(sock.read(1))
         print(state)
-        if mode == 1:                           # Extensão
+        if mode == 1:       # Extensão B00000011 
             if state == 0: 
                 print("Parado")
                 stim.update(channels,[0,0,0,0,0,0,0,0], current_str)
@@ -148,7 +148,7 @@ def running(current_CH12,current_CH34,pw,mode,channels):
             elif state == 2:
                 stim.update(channels,[0,0,0,0,0,0,0,0], current_str)    
                 print("Flexao")    
-        elif mode == 2:                         # Para 4 canais
+        elif mode == 2:     # Flexão B00001100
             if state == 0: 
                 print("Parado")
                 stim.update(channels,[0,0,0,0,0,0,0,0], current_str)
@@ -159,7 +159,7 @@ def running(current_CH12,current_CH34,pw,mode,channels):
             elif state == 2:
                 stim.update(channels,[0,0,pw,pw,0,0,0,0], current_str)    
                 print("Flexao")
-        elif mode == 3:                         # Para 4 canais
+        elif mode == 3:     # Extensão + Flexão B00001111
             if state == 0: 
                 print("Parado")
                 stim.update(channels,[0,0,0,0,0,0,0,0], current_str)
@@ -169,8 +169,63 @@ def running(current_CH12,current_CH34,pw,mode,channels):
                 print("Extensao")       
             elif state == 2:
                 stim.update(channels,[0,0,pw,pw,0,0,0,0], current_str)    
+                print("Flexao")
+        elif mode == 4:     # (Extensão & Aux_Ext) B00110011
+            if state == 0: 
+                print("Parado")
+                stim.update(channels,[0,0,0,0,0,0,0,0], current_str)
+               # stim.stop()
+            elif state == 1:
+                stim.update(channels,[pw,pw,0,0,pw,pw,0,0], current_str)    
+                print("Extensao")       
+            elif state == 2:
+                stim.update(channels,[0,0,0,0,0,0,0,0], current_str)    
+                print("Flexao")
+        elif mode == 5:     # (Extensão & Aux_Ext) + Flexão B00111111
+            if state == 0: 
+                print("Parado")
+                stim.update(channels,[0,0,0,0,0,0,0,0], current_str)
+               # stim.stop()
+            elif state == 1:
+                stim.update(channels,[pw,pw,0,0,pw,pw,0,0], current_str)    
+                print("Extensao")       
+            elif state == 2:
+                stim.update(channels,[0,0,pw,pw,0,0,0,0], current_str)    
                 print("Flexao")    
-            #para usar 6 ou 8 canais eh necessario copiar o codigo logo acima e mudar somente o vetor pw,
+        elif mode == 6:     # (Flexão & Aux_Flex) B11001100
+            if state == 0: 
+                print("Parado")
+                stim.update(channels,[0,0,0,0,0,0,0,0], current_str)
+               # stim.stop()
+            elif state == 1:
+                stim.update(channels,[0,0,0,0,0,0,0,0], current_str)    
+                print("Extensao")       
+            elif state == 2:
+                stim.update(channels,[0,0,pw,pw,0,0,pw,pw], current_str)    
+                print("Flexao")
+        elif mode == 7:     # Extensao + (Flexão & Aux_Flex) B11001111
+            if state == 0: 
+                print("Parado")
+                stim.update(channels,[0,0,0,0,0,0,0,0], current_str)
+               # stim.stop()
+            elif state == 1:
+                stim.update(channels,[pw,pw,0,0,0,0,0,0], current_str)    
+                print("Extensao")       
+            elif state == 2:
+                stim.update(channels,[0,0,pw,pw,0,0,pw,pw], current_str)    
+                print("Flexao")  
+        elif mode == 8:     # (Extensão & Aux_Ext) + (Flexão & Aux_Flex) B11111111
+            if state == 0: 
+                print("Parado")
+                stim.update(channels,[0,0,0,0,0,0,0,0], current_str)
+               # stim.stop()
+            elif state == 1:
+                stim.update(channels,[pw,pw,0,0,pw,pw,0,0], current_str)    
+                print("Extensao")       
+            elif state == 2:
+                stim.update(channels,[0,0,pw,pw,0,0,pw,pw], current_str)    
+                print("Flexao")   
+        #para usar 6 ou 8 canais eh necessario copiar o codigo logo acima e mudar somente o vetor pw,
             #colocando-se pw no canal que se quer estimular
     
 def main():
